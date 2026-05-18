@@ -43,7 +43,10 @@ class PremiumMemberServiceTest extends KernelTestCase
      */
     public function testGenerateMemberProfileSuccess(): void
     {
-        
+        $member = $this->premiumMemberService->generateMemberProfile("Arthur", 25, ['Coding', 'Gaming']);
+
+        $this->assertIsArray($member);
+        $this->assertArrayHasKey('id', $member);
     }
 
     /**
@@ -61,109 +64,173 @@ class PremiumMemberServiceTest extends KernelTestCase
 
     public function testGenerateMemberProfileThrowsExceptionForUnderage(): void
     {
-        // To do...
-        // $this->premiumMemberService->...
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Le membre doit être majeur.");
+        $this->premiumMemberService->generateMemberProfile("Arthur", 15, ['Coding', 'Gaming']);
     }
 
     public function testGenerateMemberProfileThrowsExceptionForEmptyUsername(): void
     {
-        // To do...
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Le nom d'utilisateur ne peut pas être vide.");
+        $this->premiumMemberService->generateMemberProfile("", 25, ['Coding', 'Gaming']);
     }
 
     public function testApplyPromoCodeVip(): void
     {
-        // To do...
+        $finalamount = $this->premiumMemberService->applyPromoCode(10, 'VIP20');
+        $this->assertEquals(8, $finalamount);
     }
     
     // On y est presque...
 
     public function testIsEligibleForUpgrade(): void
     {
-        // To do...
+        $iseligible = $this->premiumMemberService->isEligibleForUpgrade(25, ['Gaming', 'Code', 'Flower'], 105);
+        $this->assertTrue($iseligible);
     }
 
 
     public function testApplyPromoCodeSummer50(): void
     {
-        // Todo ...
+        $finalamount = $this->premiumMemberService->applyPromoCode(10, 'SUMMER50');
+        $this->assertEquals(5, $finalamount);
     }
 
     public function testApplyPromoCodeThrowExceptionInvalid(): void
     {
-        // Todo ...
+        $finalamount = $this->premiumMemberService->applyPromoCode(10, 'FALSE80');
+        $this->assertEquals(10, $finalamount);
     }
 
     public function testApplyPromoCodeNullAmountUnchanged(): void
     {
-        // Todo ...
+        $finalamount = $this->premiumMemberService->applyPromoCode(10, '');
+        $this->assertEquals(10, $finalamount);
     }
 
     public function testIsEligibleForUpgradeSuccess(): void
     {
-        // Todo ...
+        $iseligible = $this->premiumMemberService->isEligibleForUpgrade(25, ['Gaming', 'Code', 'Flower'], 105);
+        $this->assertTrue($iseligible);
     }
 
     public function testIsEligibleForUpgradeUnderAge(): void
     {
-        // Todo ...
+        $iseligible = $this->premiumMemberService->isEligibleForUpgrade(15, ['Gaming', 'Code', 'Flower'], 105);
+        $this->assertFalse($iseligible);
     }
 
     // C'est encore loin ? 8( 
 
     public function testIsEligibleForUpgradeInsufficientInterests(): void
     {
-        // Todo ...
+        $iseligible = $this->premiumMemberService->isEligibleForUpgrade(19, ['Gaming', 'Code'], 105);
+        $this->assertFalse($iseligible);
     }
 
     public function testIsEligibleForUpgradeInsufficientSpent(): void
     {
-        // Todo ...
+        $iseligible = $this->premiumMemberService->isEligibleForUpgrade(25, ['Gaming', 'Code', 'Flower'], 85);
+        $this->assertFalse($iseligible);
     }
 
     public function testCalculateLoyaltyPointsStandard(): void
     {
-        // Todo ...
+        $totalpoints = $this->premiumMemberService->calculateLoyaltyPoints(20);
+        $this->assertEquals(200, $totalpoints);
     }
 
     public function testCalculateLoyaltyPointsPremium(): void
     {
-        // Todo ...
+        $totalpoints = $this->premiumMemberService->calculateLoyaltyPoints(20, true);
+        $this->assertEquals(300, $totalpoints);
     }
 
     public function testCalculateLoyaltyPointsNegativeThrowException(): void
     {
-        // Todo ...
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Le montant ne peut pas être négatif.");
+        $this->premiumMemberService->calculateLoyaltyPoints(-10, true);
     }
 
     public function testSummarizeSpending(): void
     {
-        // Todo ...
+        $spending = $this->premiumMemberService->summarizeSpending([20, 10, 60, 30]);
+        $this->assertSame(['total' => 120, 'average' => 30, 'min' => 10, 'max' => 60], $spending);
     }
 
     public function testSummarizeSpendingEmptyThrowException(): void
     {
-        // Todo ...
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Le tableau de transactions ne peut pas être vide.");
+        $this->premiumMemberService->summarizeSpending([]);
     }
 
     // On a presque fini :)
 
     public function testRenewSubscription1Month(): void
     {
-        // Todo ...
+        $addedsub = $this->premiumMemberService->renewSubscription(1);
+        $prefix = date('Y-m-d', strtotime("+1 months"));
+        $this->assertStringStartsWith($prefix, $addedsub);
     }
 
     public function testRenewSubscriptionInvalidDurationThrowException(): void
     {
-        // Todo ...
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("La durée doit être de 1, 6 ou 12 mois.");
+        $this->premiumMemberService->renewSubscription(3);
     }
 
     public function testAnonymizeProfile(): void
     {
-        // Todo ...
+        $profile = [
+            'id' => 1,
+            'meta' => [
+                'username' => "Arthur",
+                'clean_name' => "Rhahim",
+                'age' => 25 
+            ],
+            'preferences' => [
+                'interests' => ['Gaming', 'Code'],
+                'count' => 2
+            ]
+        ];
+
+        $anonym = [
+            'id' => 1,
+            'meta' => [
+                'username' => "anonymous",
+                'clean_name' => "anonymous",
+                'age' => 0 
+            ],
+            'preferences' => [
+                'interests' => [],
+                'count' => 0
+            ]
+        ];
+
+        $anonymized = $this->premiumMemberService->anonymizeProfile($profile);
+        $this->assertSame($anonym, $anonymized);
     }
 
     public function testAnonymizeProfileInvalidThrowException(): void
     {
-        // Todo ...
+        $profile = [
+            'meta' => [
+                'username' => "Arthur",
+                'clean_name' => "Rhahim",
+                'age' => 25 
+            ],
+            'preferences' => [
+                'interests' => ['Gaming', 'Code'],
+                'count' => 2
+            ]
+        ];
+
+        $this->expectException(InvalidArgumentException::class);
+        $this->expectExceptionMessage("Le profil est invalide ou incomplet.");
+        $this->premiumMemberService->anonymizeProfile($profile);
     }
 }
